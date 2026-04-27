@@ -1,0 +1,1 @@
+{"exitCode":0,"output":"段落数: 244\n表格数: 0","outputLines":2,"stderr":"","command":"cd /home/project/outputs && python3 -c \"from docx import Document; doc = Document('虾蛋星球网站详细介绍_v2.0.docx'); print('段落数:', len(doc.paragraphs)); print('表格数:', len(doc.tables))\"","timedOut":false}

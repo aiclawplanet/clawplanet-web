@@ -1,0 +1,14 @@
+The file /home/project/src/App.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+  16→import { PromoteTool } from './pages/PromoteTool';
+  17→import { PromotionCenter } from './pages/PromotionCenter';
+  18→import { CreatePromotion } from './pages/CreatePromotion';
+  19→import { PromotionList } from './pages/PromotionList';
+  20→import { PromotionDetail } from './pages/PromotionDetail';
+  21→import { PlatformSettings } from './pages/PlatformSettings';
+  22→
+  23→function App() {
+  24→  return (
+  25→    <HashRouter>
+  26→      <Routes>

@@ -1,0 +1,1 @@
+{"exitCode":0,"output":"/bin/sh: 1: pandoc: not found","outputLines":1,"stderr":"","command":"pandoc -f docx -t markdown /home/project/outputs/虾蛋星球融资计划书_天使轮_v1.0.docx -o /home/project/outputs/虾蛋星球融资计划书_天使轮_v1.0.md 2>&1","timedOut":false}

@@ -1,0 +1,657 @@
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Zap, Home as HomeIcon, Heart, Book, Gamepad2, DollarSign, Code, MoreHorizontal, ChevronRight, Sparkles, Search, Flame, Calendar, Clock, ChevronLeft, Wrench, Eye, Rocket, Briefcase } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabase/client';
+import type { Tables } from '../supabase/types';
+
+type Category = Tables<'categories'>;
+type Tool = Tables<'tools'>;
+type TimePeriod = 'today' | 'week' | 'month';
+
+const bannerSlides = [
+  {
+    id: 1,
+    title: '发现独立开发者的宝藏工具',
+    subtitle: '一站触达全平台，让创作者作品被看见',
+    gradient: 'from-[#8B5CF6]/30 to-[#3B82F6]/30',
+    icon: Sparkles,
+    link: '/category/all',
+    cta: '立即探索'
+  },
+  {
+    id: 2,
+    title: '需求大厅',
+    subtitle: '发布开发需求，找到合适的开发者',
+    gradient: 'from-[#06B6D4]/30 to-[#8B5CF6]/30',
+    icon: Briefcase,
+    link: '/demands',
+    cta: '浏览需求'
+  },
+  {
+    id: 3,
+    title: '入驻虾蛋星球',
+    subtitle: '展示你的作品，获得更多曝光和用户',
+    gradient: 'from-[#10B981]/30 to-[#3B82F6]/30',
+    icon: Code,
+    link: '/join',
+    cta: '立即入驻'
+  },
+  {
+    id: 4,
+    title: '成为星推官',
+    subtitle: '发现价值工具，分享优质内容',
+    gradient: 'from-[#F59E0B]/30 to-[#EF4444]/30',
+    icon: Flame,
+    link: '/promoter',
+    cta: '开始推广'
+  }
+];
+
+const categoryIcons: Record<string, React.ElementType> = {
+  '效率工具': Zap,
+  '生活助手': HomeIcon,
+  '健康运动': Heart,
+  '学习教育': Book,
+  '娱乐休闲': Gamepad2,
+  '金融理财': DollarSign,
+  '开发工具': Code,
+  '其他': MoreHorizontal,
+};
+
+const RECENTLY_VIEWED_KEY = 'recently_viewed_tools';
+const MAX_RECENT_TOOLS = 10;
+
+export function Home() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [featuredTools, setFeaturedTools] = useState<Tool[]>([]);
+  const [newTools, setNewTools] = useState<Tool[]>([]);
+  const [hotTools, setHotTools] = useState<Tool[]>([]);
+  const [hotPeriod, setHotPeriod] = useState<TimePeriod>('today');
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const [recommendedTools, setRecommendedTools] = useState<Tool[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<Tool[]>([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchData();
+    loadRecentlyViewed();
+  }, []);
+
+  useEffect(() => {
+    fetchHotTools(hotPeriod);
+  }, [hotPeriod]);
+
+  // Auto-rotate banner
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentBanner((prev) => (prev + 1) % bannerSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Generate personalized recommendations after data loaded
+  useEffect(() => {
+    if ((featuredTools.length > 0 || newTools.length > 0) && categories.length > 0) {
+      generateRecommendations();
+    }
+  }, [featuredTools, newTools, categories]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  async function fetchData() {
+    try {
+      // Fetch categories
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('*')
+        .order('sort_order');
+
+      if (categoriesData) {
+        setCategories(categoriesData);
+      }
+
+      // Fetch featured tools (limit 10)
+      const { data: featuredData } = await supabase
+        .from('tools')
+        .select('*, developer:developer_id(username)')
+        .eq('status', 'approved')
+        .eq('is_premium', true)
+        .limit(10);
+
+      if (featuredData) {
+        setFeaturedTools(featuredData);
+      }
+
+      // Fetch new tools (limit 10)
+      const { data: newData } = await supabase
+        .from('tools')
+        .select('*, developer:developer_id(username)')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (newData) {
+        setNewTools(newData);
+      }
+
+      // Fetch hot tools (default today, limit 10)
+      await fetchHotTools('today');
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchHotTools(period: TimePeriod) {
+    try {
+      const { data: hotData } = await supabase
+        .from('tools')
+        .select('*, developer:developer_id(username)')
+        .eq('status', 'approved')
+        .order('view_count', { ascending: false })
+        .limit(10);
+
+      if (hotData) {
+        setHotTools(hotData);
+      }
+    } catch (error) {
+      console.error('Error fetching hot tools:', error);
+    }
+  }
+
+  async function loadRecentlyViewed() {
+    const saved = localStorage.getItem(RECENTLY_VIEWED_KEY);
+    if (saved) {
+      try {
+        const toolIds: string[] = JSON.parse(saved);
+        if (toolIds.length > 0) {
+          const { data: toolsData } = await supabase
+            .from('tools')
+            .select('*, developer:developer_id(username)')
+            .in('id', toolIds)
+            .eq('status', 'approved');
+
+          if (toolsData) {
+            setRecentlyViewed(toolsData);
+          }
+        }
+      } catch {
+        setRecentlyViewed([]);
+      }
+    }
+  }
+
+  async function generateRecommendations() {
+    // Use already fetched data instead of querying database again
+    const allTools = [...featuredTools, ...newTools];
+
+    if (allTools.length === 0) {
+      setRecommendedTools([]);
+      return;
+    }
+
+    // Remove duplicates by id using Map
+    const uniqueToolsMap = new Map<string, Tool>();
+    allTools.forEach(tool => {
+      if (!uniqueToolsMap.has(tool.id)) {
+        uniqueToolsMap.set(tool.id, tool);
+      }
+    });
+    const uniqueTools = Array.from(uniqueToolsMap.values());
+
+    // Get viewed categories for personalization
+    const saved = localStorage.getItem(RECENTLY_VIEWED_KEY);
+    let viewedCategories: string[] = [];
+
+    if (saved) {
+      try {
+        const toolIds: string[] = JSON.parse(saved);
+        const viewedTools = uniqueTools.filter(t => toolIds.includes(t.id));
+        viewedCategories = viewedTools.map(t => t.category_id).filter(Boolean);
+      } catch {
+        viewedCategories = [];
+      }
+    }
+
+    let recommendations: Tool[] = [];
+
+    if (viewedCategories.length > 0) {
+      // Prioritize tools from viewed categories
+      const categoryTools = uniqueTools.filter(t =>
+        viewedCategories.includes(t.category_id || '')
+      );
+      const otherTools = uniqueTools.filter(t =>
+        !viewedCategories.includes(t.category_id || '')
+      );
+
+      // Mix category-matched tools with others, max 10
+      recommendations = [
+        ...categoryTools,
+        ...otherTools
+      ].slice(0, 10);
+    } else {
+      // Random shuffle for new users
+      recommendations = [...uniqueTools].sort(() => 0.5 - Math.random()).slice(0, 10);
+    }
+
+    setRecommendedTools(recommendations);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8B5CF6]"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      {/* Banner Carousel */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <div className="relative overflow-hidden rounded-[20px] bg-white/5 backdrop-blur-xl border border-white/[0.08] h-48 md:h-56 shadow-premium">
+          {/* 微动效背景光斑 - 与地球背景融合 */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-[#8B5CF6]/30 rounded-full blur-[60px] animate-float"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-[#3B82F6]/30 rounded-full blur-[80px] animate-float" style={{ animationDelay: '-7s' }}></div>
+            <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-[#10B981]/20 rounded-full blur-[40px] animate-float" style={{ animationDelay: '-14s' }}></div>
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentBanner}
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.5 }}
+              className={`absolute inset-0 bg-gradient-to-br ${bannerSlides[currentBanner].gradient} p-5 md:p-8 flex items-center`}
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+              <div className="relative z-10 flex-1 pl-8">
+                <div className="flex items-center space-x-2 mb-2">
+                  {React.createElement(bannerSlides[currentBanner].icon, { className: "w-5 h-5 text-white" })}
+                  <span className="text-white/80 text-sm font-medium">虾蛋星球</span>
+                </div>
+                <h1 className="text-2xl md:text-4xl font-extrabold mb-2 gradient-text">
+                  {bannerSlides[currentBanner].title}
+                </h1>
+                <p className="text-sm text-white/70 mb-4 max-w-md">
+                  {bannerSlides[currentBanner].subtitle}
+                </p>
+                <Link
+                  to={bannerSlides[currentBanner].link}
+                  className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] rounded-xl text-sm font-semibold hover:scale-105 transition-transform btn-shimmer shadow-premium"
+                >
+                  {bannerSlides[currentBanner].cta}
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Link>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Banner Navigation */}
+          <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center space-x-2 z-20">
+            {bannerSlides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentBanner(index)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  currentBanner === index
+                    ? 'bg-white w-6'
+                    : 'bg-white/40 hover:bg-white/60'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Arrow Navigation */}
+          <button
+            onClick={() => setCurrentBanner((prev) => (prev - 1 + bannerSlides.length) % bannerSlides.length)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/20 backdrop-blur-sm rounded-full hover:bg-black/40 transition-colors z-20"
+          >
+            <ChevronLeft className="w-5 h-5 text-white" />
+          </button>
+          <button
+            onClick={() => setCurrentBanner((prev) => (prev + 1) % bannerSlides.length)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/20 backdrop-blur-sm rounded-full hover:bg-black/40 transition-colors z-20"
+          >
+            <ChevronRight className="w-5 h-5 text-white" />
+          </button>
+        </div>
+      </motion.section>
+
+      {/* Role Selection */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-8"
+      >
+        <div className="grid grid-cols-3 gap-4">
+          {/* Developer */}
+          <Link
+            to="/join"
+            className="group relative overflow-hidden rounded-[20px] bg-white/5 backdrop-blur-xl border border-white/[0.08] p-4 hover:border-[#8B5CF6]/50 card-hover"
+          >
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-premium">
+                <Code className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-base font-bold mb-1">开发者</h3>
+              <p className="text-white/50 text-sm mb-3">入驻展示作品</p>
+              <span className="inline-flex items-center text-[#8B5CF6] text-sm font-medium">
+                入驻
+                <ChevronRight className="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </div>
+          </Link>
+
+          {/* User */}
+          <Link
+            to="/category/all"
+            className="group relative overflow-hidden rounded-[20px] bg-white/5 backdrop-blur-xl border border-white/[0.08] p-4 hover:border-[#10B981]/50 card-hover"
+          >
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-premium">
+                <Search className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-base font-bold mb-1">用户</h3>
+              <p className="text-white/50 text-sm mb-3">发现实用工具</p>
+              <span className="inline-flex items-center text-[#10B981] text-sm font-medium">
+                浏览
+                <ChevronRight className="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </div>
+          </Link>
+
+          {/* Promoter */}
+          <Link
+            to="/promoter"
+            className="group relative overflow-hidden rounded-[20px] bg-white/5 backdrop-blur-xl border border-white/[0.08] p-4 hover:border-[#F59E0B]/50 card-hover"
+          >
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-[#F59E0B] to-[#EF4444] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-premium">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-base font-bold mb-1">星推官</h3>
+              <p className="text-white/50 text-sm mb-3">发现价值工具</p>
+              <span className="inline-flex items-center text-[#F59E0B] text-sm font-medium">
+                推广
+                <ChevronRight className="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </div>
+          </Link>
+        </div>
+      </motion.section>
+
+      {/* Categories */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-8"
+      >
+        <h2 className="text-lg font-bold mb-4 flex items-center">
+          <span className="w-1.5 h-5 bg-gradient-to-b from-[#8B5CF6] to-[#6D28D9] rounded-full mr-2"></span>
+          分类浏览
+        </h2>
+        <div className="grid grid-cols-4 gap-3">
+          {categories.slice(0, 8).map((category, index) => {
+            const Icon = categoryIcons[category.name] || MoreHorizontal;
+            return (
+              <motion.div
+                key={category.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.03 }}
+              >
+                <Link
+                  to={`/category/${category.id}`}
+                  className="group flex flex-col items-center p-3 bg-white/5 backdrop-blur-xl border border-white/[0.08] rounded-[16px] hover:border-[#8B5CF6]/50 hover:bg-white/10 card-hover"
+                >
+                  <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#8B5CF6]/20 to-[#6D28D9]/20 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <Icon className="w-5 h-5 text-[#8B5CF6]" />
+                  </div>
+                  <span className="text-sm text-white/80 text-center truncate w-full">{category.name}</span>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
+      </motion.section>
+
+      {/* Personalized Recommendations */}
+      {recommendedTools.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold flex items-center">
+              <span className="w-1.5 h-5 bg-gradient-to-b from-[#8B5CF6] to-[#6D28D9] rounded-full mr-2"></span>
+              <Heart className="w-5 h-5 mr-2 text-pink-400" />
+              猜你喜欢
+            </h2>
+            <Link to="/category/all" className="text-[#8B5CF6] text-sm hover:underline">
+              更多
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {recommendedTools.map((tool, index) => (
+              <ToolCard key={tool.id} tool={tool} index={index} compact />
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* Recently Viewed */}
+      {recentlyViewed.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold flex items-center">
+              <span className="w-1.5 h-5 bg-gradient-to-b from-[#8B5CF6] to-[#6D28D9] rounded-full mr-2"></span>
+              <Clock className="w-5 h-5 mr-2 text-blue-400" />
+              最近浏览
+            </h2>
+            <button
+              onClick={() => {
+                localStorage.removeItem(RECENTLY_VIEWED_KEY);
+                setRecentlyViewed([]);
+              }}
+              className="text-white/40 text-sm hover:text-red-400"
+            >
+              清空
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {recentlyViewed.map((tool, index) => (
+              <ToolCard key={tool.id} tool={tool} index={index} compact />
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* Hot Tools with Period Selector */}
+      {hotTools.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold flex items-center">
+              <span className="w-1.5 h-5 bg-gradient-to-b from-[#8B5CF6] to-[#6D28D9] rounded-full mr-2"></span>
+              <Flame className="w-5 h-5 mr-2 text-orange-400" />
+              热门排行
+            </h2>
+            <div className="flex items-center space-x-1">
+              {[
+                { key: 'today', label: '今日', icon: Clock },
+                { key: 'week', label: '本周', icon: Calendar },
+                { key: 'month', label: '本月', icon: Calendar },
+              ].map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setHotPeriod(key as TimePeriod)}
+                  className={`flex items-center px-2 py-1 rounded-lg text-xs transition-all ${
+                    hotPeriod === key
+                      ? 'bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white'
+                      : 'bg-white/5 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  <Icon className="w-3 h-3 mr-1" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            {hotTools.slice(0, 3).map((tool, index) => (
+              <ToolCard key={tool.id} tool={tool} index={index} compact showRank />
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* Featured Tools */}
+      {featuredTools.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold flex items-center">
+              <span className="w-1.5 h-5 bg-gradient-to-b from-[#8B5CF6] to-[#6D28D9] rounded-full mr-2"></span>
+              精品推荐
+            </h2>
+            <Link to="/category/all" className="text-[#8B5CF6] text-sm hover:underline">
+              全部
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-4">
+            {featuredTools.slice(0, 3).map((tool, index) => (
+              <ToolCard key={tool.id} tool={tool} index={index} compact />
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* New Tools */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="mb-8"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold flex items-center">
+            <span className="w-1.5 h-5 bg-gradient-to-b from-[#8B5CF6] to-[#6D28D9] rounded-full mr-2"></span>
+            今日新上架
+          </h2>
+          <Link to="/category/all" className="text-[#8B5CF6] text-sm hover:underline">
+            全部
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          {newTools.slice(0, 3).map((tool, index) => (
+            <ToolCard key={tool.id} tool={tool} index={index} compact />
+          ))}
+        </div>
+      </motion.section>
+    </div>
+  );
+}
+
+interface ToolCardProps {
+  tool: Tool & { developer?: { username: string | null } };
+  index: number;
+  compact?: boolean;
+  showRank?: boolean;
+}
+
+function ToolCard({ tool, index, compact, showRank }: ToolCardProps) {
+  const rankColors = ['text-yellow-400', 'text-gray-300', 'text-orange-400'];
+  const rankBgColors = ['bg-yellow-400/20', 'bg-gray-400/20', 'bg-orange-400/20'];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      whileHover={{ y: -4 }}
+    >
+      <Link
+        to={`/tool/${tool.id}`}
+        className="group flex items-center bg-white/5 backdrop-blur-xl border border-white/[0.08] rounded-[16px] overflow-hidden hover:border-[#8B5CF6]/50 hover:bg-white/10 card-hover p-3"
+      >
+        {showRank && index < 3 && (
+          <div className={`flex-shrink-0 w-8 h-8 ${rankBgColors[index]} rounded-xl flex items-center justify-center mr-3`}>
+            <span className={`text-sm font-bold ${rankColors[index]}`}>{index + 1}</span>
+          </div>
+        )}
+        <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-[#8B5CF6]/20 to-[#3B82F6]/20 flex items-center justify-center overflow-hidden">
+          {tool.icon_url ? (
+            <img
+              src={tool.icon_url}
+              alt={tool.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Wrench className="w-7 h-7 text-[#8B5CF6]" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0 ml-3">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-bold text-white group-hover:text-[#8B5CF6] transition-colors truncate">
+              {tool.name}
+            </h3>
+            {tool.is_premium && (
+              <span className="flex-shrink-0 px-1.5 py-0.5 bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] rounded text-[10px] font-medium">
+                精品
+              </span>
+            )}
+          </div>
+          <p className="text-white/50 text-xs line-clamp-1 mb-2">
+            {tool.description}
+          </p>
+          <div className="flex items-center justify-between text-xs text-white/40">
+            <span className="truncate max-w-[80px]">@{tool.developer?.username || '匿名开发者'}</span>
+            <div className="flex items-center space-x-2">
+              <span className="flex items-center gap-0.5">
+                <Eye className="w-3 h-3" />
+                {tool.view_count || 0}
+              </span>
+              <span className="flex items-center gap-0.5">
+                <Rocket className="w-3 h-3" />
+                {tool.jump_count || 0}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}

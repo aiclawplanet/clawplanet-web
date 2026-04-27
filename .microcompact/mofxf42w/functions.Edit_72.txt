@@ -1,0 +1,19 @@
+The file /home/project/src/pages/Home.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+  92→    }, 5000);
+  93→    return () => clearInterval(timer);
+  94→  }, []);
+  95→
+  96→  // Generate personalized recommendations once after all data loaded
+  97→  useEffect(() => {
+  98→    if (!loading && featuredTools.length > 0 && newTools.length > 0 && categories.length > 0) {
+  99→      generateRecommendations();
+ 100→    }
+ 101→    // eslint-disable-next-line react-hooks/exhaustive-deps
+ 102→  }, [loading]);
+ 103→
+ 104→  const handleSearch = (e: React.FormEvent) => {
+ 105→    e.preventDefault();
+ 106→    if (searchQuery.trim()) {
+ 107→      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);

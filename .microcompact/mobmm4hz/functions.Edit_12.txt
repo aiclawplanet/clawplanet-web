@@ -1,0 +1,62 @@
+The file /home/project/src/pages/Home.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 194→      }
+ 195→    }
+ 196→  }
+ 197→
+ 198→  async function generateRecommendations() {
+ 199→    // Smart recommendation algorithm
+ 200→    const saved = localStorage.getItem(RECENTLY_VIEWED_KEY);
+ 201→    let viewedCategories: string[] = [];
+ 202→
+ 203→    if (saved) {
+ 204→      try {
+ 205→        const toolIds: string[] = JSON.parse(saved);
+ 206→        const { data: viewedTools } = await supabase
+ 207→          .from('tools')
+ 208→          .select('category_id')
+ 209→          .in('id', toolIds);
+ 210→
+ 211→        if (viewedTools) {
+ 212→          viewedCategories = viewedTools.map(t => t.category_id).filter(Boolean);
+ 213→        }
+ 214→      } catch {
+ 215→        viewedCategories = [];
+ 216→      }
+ 217→    }
+ 218→
+ 219→    // Combine all available tools
+ 220→    const allTools = [...featuredTools, ...newTools];
+ 221→
+ 222→    if (allTools.length > 0) {
+ 223→      let recommendations: Tool[] = [];
+ 224→
+ 225→      if (viewedCategories.length > 0) {
+ 226→        // Prioritize tools from viewed categories
+ 227→        const categoryTools = allTools.filter(t =>
+ 228→          viewedCategories.includes(t.category_id || '')
+ 229→        );
+ 230→        const otherTools = allTools.filter(t =>
+ 231→          !viewedCategories.includes(t.category_id || '')
+ 232→        );
+ 233→
+ 234→        // Mix category-matched tools with others
+ 235→        recommendations = [
+ 236→          ...categoryTools.slice(0, 3),
+ 237→          ...otherTools.slice(0, 1)
+ 238→        ];
+ 239→      } else {
+ 240→        // Random selection for new users
+ 241→        const shuffled = [...allTools].sort(() => 0.5 - Math.random());
+ 242→        recommendations = shuffled.slice(0, 4);
+ 243→      }
+ 244→
+ 245→      setRecommendedTools(recommendations);
+ 246→    }
+ 247→  }
+ 248→
+ 249→  if (loading) {
+ 250→    return (
+ 251→      <div className="flex items-center justify-center min-h-screen">
+ 252→        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8B5CF6]"></div>

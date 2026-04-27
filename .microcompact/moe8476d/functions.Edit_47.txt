@@ -1,0 +1,13 @@
+The file /home/project/src/components/Header.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 151→            </Link>
+ 152→            <Link to="/profile" className="block text-white/70 hover:text-white py-2" onClick={() => setIsMenuOpen(false)}>
+ 153→              我的
+ 154→            </Link>
+ 155→
+ 156→          </div>
+ 157→        </div>
+ 158→      )}
+ 159→    </header>
+ 160→  );

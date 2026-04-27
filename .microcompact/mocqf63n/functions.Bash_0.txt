@@ -1,0 +1,1 @@
+{"exitCode":0,"output":"详细介绍文档已生成：/home/project/outputs/虾蛋星球网站详细介绍_v2.0.docx","outputLines":1,"stderr":"","command":"python3 /home/project/tmp/create_xiadan_docs.py","timedOut":false}

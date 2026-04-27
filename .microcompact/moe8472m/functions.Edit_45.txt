@@ -1,0 +1,27 @@
+The file /home/project/src/components/Header.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+   1→import React, { useState, useEffect } from 'react';
+   2→import { Link, useNavigate } from 'react-router-dom';
+   3→import { Search, Menu, X, Bell, MessageSquare, MessageCircle } from 'lucide-react';
+   4→import { Logo } from './Logo';
+   5→import { supabase } from '../supabase/client';
+   6→
+   7→export function Header() {
+   8→  const [isMenuOpen, setIsMenuOpen] = useState(false);
+   9→  const [searchQuery, setSearchQuery] = useState('');
+  10→  const [notificationCount, setNotificationCount] = useState(0);
+  11→  const [unreadMessages, setUnreadMessages] = useState(0);
+  12→  const navigate = useNavigate();
+  13→
+  14→  useEffect(() => {
+  15→    // Always use dark mode
+  16→    document.documentElement.classList.add('dark');
+  17→    document.documentElement.setAttribute('data-theme', 'dark');
+  18→    localStorage.setItem('theme', 'dark');
+  19→  }, []);
+  20→
+  21→  useEffect(() => {
+  22→    fetchNotificationCount();
+  23→  }, []);
+  24→

@@ -1,0 +1,14 @@
+The file /home/project/src/App.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+  40→          <Route path="promote" element={<PromoteTool />} />
+  41→          <Route path="promotion" element={<PromotionCenter />} />
+  42→          <Route path="promotion/create" element={<CreatePromotion />} />
+  43→          <Route path="promotion/list" element={<PromotionList />} />
+  44→          <Route path="promotion/:id" element={<PromotionDetail />} />
+  45→          <Route path="promotion/settings" element={<PlatformSettings />} />
+  46→        </Route>
+  47→      </Routes>
+  48→    </HashRouter>
+  49→  );
+  50→}

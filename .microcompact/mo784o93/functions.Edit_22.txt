@@ -1,0 +1,17 @@
+The file /home/project/functions/publish-to-platforms/index.ts has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 317→        results,
+ 318→      }),
+ 319→      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+ 320→    );
+ 321→  } catch (error) {
+ 322→    console.error('Error:', error);
+ 323→    const errorMessage = error instanceof Error ? error.message : '服务器错误';
+ 324→    return new Response(
+ 325→      JSON.stringify({ error: errorMessage }),
+ 326→      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+ 327→    );
+ 328→  }
+ 329→});
+ 330→

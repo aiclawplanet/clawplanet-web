@@ -1,0 +1,16 @@
+The file /home/project/functions/publish-to-platforms/index.ts has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 155→      success: true,
+ 156→      postId: data.idstr,
+ 157→      postUrl: `https://weibo.com/${data.user?.idstr}/${data.idstr}`,
+ 158→    };
+ 159→  } catch (error) {
+ 160→    const errorMessage = error instanceof Error ? error.message : '发布失败';
+ 161→    return { platform: 'weibo', success: false, error: errorMessage };
+ 162→  }
+ 163→}
+ 164→
+ 165→Deno.serve(async (req) => {
+ 166→  if (req.method === 'OPTIONS') {
+ 167→    return new Response('ok', { headers: corsHeaders });

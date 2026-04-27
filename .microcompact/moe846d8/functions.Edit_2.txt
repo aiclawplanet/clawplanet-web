@@ -1,0 +1,17 @@
+The file /home/project/src/components/EarthBackground.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+   1→import React, { useEffect, useRef } from 'react';
+   2→
+   3→interface EarthBackgroundProps {
+   4→  showLogo?: boolean;
+   5→}
+   6→
+   7→export function EarthBackground({ showLogo = true }: EarthBackgroundProps) {
+   8→  const canvasRef = useRef<HTMLCanvasElement>(null);
+   9→  const logoCanvasRef = useRef<HTMLCanvasElement>(null);
+  10→
+  11→  useEffect(() => {
+  12→    const canvas = canvasRef.current;
+  13→    if (!canvas) return;
+  14→

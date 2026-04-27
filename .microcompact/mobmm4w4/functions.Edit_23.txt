@@ -1,0 +1,41 @@
+The file /home/project/src/pages/ToolDetail.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+  61→      if (linksData) {
+  62→        setPlatformLinks(linksData);
+  63→      }
+  64→
+  65→      // Fetch comments
+  66→      const { data: commentsData } = await supabase
+  67→        .from('comments')
+  68→        .select('*, user:user_id(*)')
+  69→        .eq('tool_id', id)
+  70→        .is('parent_id', null)
+  71→        .order('created_at', { ascending: false });
+  72→
+  73→      if (commentsData) {
+  74→        setComments(commentsData);
+  75→      }
+  76→
+  77→      // Check if favorited and load liked comments
+  78→      const { data: { user } } = await supabase.auth.getUser();
+  79→      if (user) {
+  80→        const { data: favData } = await supabase
+  81→          .from('favorites')
+  82→          .select('*')
+  83→          .eq('tool_id', id)
+  84→          .eq('user_id', user.id)
+  85→          .single();
+  86→        setIsFavorited(!!favData);
+  87→
+  88→        // Load user's liked comments from localStorage
+  89→        const savedLikes = localStorage.getItem(`liked_comments_${user.id}`);
+  90→        if (savedLikes) {
+  91→          setLikedComments(new Set(JSON.parse(savedLikes)));
+  92→        }
+  93→      }
+  94→
+  95→      // Fetch related tools
+  96→      if (toolData?.category_id) {
+  97→        await fetchRelatedTools(toolData.category_id, id);
+  98→      }

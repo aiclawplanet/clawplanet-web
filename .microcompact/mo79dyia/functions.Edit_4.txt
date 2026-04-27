@@ -1,0 +1,27 @@
+The file /home/project/src/pages/PromotionDetail.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 426→              <div className="bg-white/5 rounded-lg p-4 whitespace-pre-wrap text-white/80 text-sm max-h-96 overflow-y-auto">
+ 427→                {content[activeTab].content}
+ 428→              </div>
+ 429→
+ 430→              {!autoPublishPlatforms.includes(activeTab) && (
+ 431→                <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-2">
+ 432→                  <AlertCircle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+ 433→                  <div className="text-sm text-white/60">
+ 434→                    <p className="font-medium text-yellow-400 mb-1">暂不支持自动发布</p>
+ 435→                    <p>
+ 436→                      {activeTab === 'wechat'
+ 437→                        ? '微信未开放公众号文章发布API，点击复制按钮会自动附加虾蛋星球推广链接，粘贴到公众号后台即可'
+ 438→                        : activeTab === 'pengyouquan'
+ 439→                        ? '微信严格限制第三方访问朋友圈，点击复制按钮会自动附加虾蛋星球推广链接，手动分享到朋友圈即可'
+ 440→                        : '该平台暂不支持自动发布，请复制内容后手动发布'}
+ 441→                    </p>
+ 442→                  </div>
+ 443→                </div>
+ 444→              )}
+ 445→            </motion.div>
+ 446→          )}
+ 447→        </motion.div>
+ 448→
+ 449→        {publishLogs.length > 0 && (

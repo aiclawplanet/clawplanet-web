@@ -1,0 +1,33 @@
+The file /home/project/src/pages/Home.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 172→      console.error('Error fetching hot tools:', error);
+ 173→    }
+ 174→  }
+ 175→
+ 176→  async function loadRecentlyViewed() {
+ 177→    const saved = localStorage.getItem(RECENTLY_VIEWED_KEY);
+ 178→    if (saved) {
+ 179→      try {
+ 180→        const toolIds: string[] = JSON.parse(saved);
+ 181→        if (toolIds.length > 0) {
+ 182→          const { data: toolsData } = await supabase
+ 183→            .from('tools')
+ 184→            .select('*, developer:developer_id(username)')
+ 185→            .in('id', toolIds)
+ 186→            .eq('status', 'approved');
+ 187→
+ 188→          if (toolsData) {
+ 189→            setRecentlyViewed(toolsData);
+ 190→          }
+ 191→        }
+ 192→      } catch {
+ 193→        setRecentlyViewed([]);
+ 194→      }
+ 195→    }
+ 196→  }
+ 197→
+ 198→  function generateRecommendations() {
+ 199→    // Simple recommendation algorithm based on available tools
+ 200→    const allTools = [...featuredTools, ...newTools];
+ 201→    if (allTools.length > 0) {

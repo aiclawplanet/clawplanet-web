@@ -1,0 +1,14 @@
+The file /home/project/src/pages/Home.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 353→      >
+ 354→        <div className="grid grid-cols-3 gap-4">
+ 355→          {/* Developer */}
+ 356→          <Link
+ 357→            to="/join"
+ 358→            className="group relative overflow-hidden rounded-[20px] bg-white/5 dark:bg-white/5 backdrop-blur-xl border border-white/[0.08] p-4 hover:border-[#8B5CF6]/50 card-hover"
+ 359→          >
+ 360→            <div className="relative z-10 flex flex-col items-center text-center">
+ 361→              <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-premium">
+ 362→                <Code className="w-6 h-6 text-white" />
+ 363→              </div>

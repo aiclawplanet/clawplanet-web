@@ -1,0 +1,16 @@
+The file /home/project/functions/publish-to-platforms/index.ts has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+  57→      success: true,
+  58→      postId: data.node_id,
+  59→      postUrl: data.html_url,
+  60→    };
+  61→  } catch (error) {
+  62→    const errorMessage = error instanceof Error ? error.message : '发布失败';
+  63→    return { platform: 'github', success: false, error: errorMessage };
+  64→  }
+  65→}
+  66→
+  67→async function publishToJuejin(
+  68→  token: string,
+  69→  title: string,

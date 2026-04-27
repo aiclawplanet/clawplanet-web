@@ -1,0 +1,21 @@
+The file /home/project/index.html has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+  17→  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  18→  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  19→  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  20→  <style>
+  21→    /* 强制暗色模式，避免闪烁 */
+  22→    html, body {
+  23→      margin: 0;
+  24→      padding: 0;
+  25→      width: 100%;
+  26→      height: 100%;
+  27→      background-color: #0a0a0f !important;
+  28→      color: #ffffff;
+  29→    }
+  30→  </style>
+  31→  <script>
+  32→    // 强制使用暗色模式，避免闪烁
+  33→    (function() {
+  34→      document.documentElement.classList.remove('light');

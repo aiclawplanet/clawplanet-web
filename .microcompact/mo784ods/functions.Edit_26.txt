@@ -1,0 +1,73 @@
+The file /home/project/src/pages/PromotionCenter.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 151→            <div className="text-white/60 text-sm">已发布</div>
+ 152→          </motion.div>
+ 153→        </div>
+ 154→
+ 155→        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+ 156→          <motion.button
+ 157→            initial={{ opacity: 0, y: 20 }}
+ 158→            animate={{ opacity: 1, y: 0 }}
+ 159→            transition={{ delay: 0.3 }}
+ 160→            onClick={() => navigate('/promotion/create')}
+ 161→            className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-6 text-left hover:from-orange-600 hover:to-red-600 transition-all group cursor-pointer"
+ 162→          >
+ 163→            <div className="flex items-center justify-between mb-4">
+ 164→              <Sparkles className="w-8 h-8" />
+ 165→              <ChevronRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+ 166→            </div>
+ 167→            <h3 className="text-lg font-semibold mb-1">AI生成文案</h3>
+ 168→            <p className="text-white/80 text-sm">输入工具信息，一键生成8平台文案</p>
+ 169→          </motion.button>
+ 170→
+ 171→          <motion.button
+ 172→            initial={{ opacity: 0, y: 20 }}
+ 173→            animate={{ opacity: 1, y: 0 }}
+ 174→            transition={{ delay: 0.35 }}
+ 175→            onClick={() => navigate('/promotion/list')}
+ 176→            className="bg-white/5 border border-white/10 rounded-xl p-6 text-left hover:bg-white/10 transition-all group cursor-pointer"
+ 177→          >
+ 178→            <div className="flex items-center justify-between mb-4">
+ 179→              <FileText className="w-8 h-8 text-blue-400" />
+ 180→              <ChevronRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+ 181→            </div>
+ 182→            <h3 className="text-lg font-semibold mb-1">我的推广</h3>
+ 183→            <p className="text-white/60 text-sm">管理所有推广内容和发布状态</p>
+ 184→          </motion.button>
+ 185→
+ 186→          <motion.button
+ 187→            initial={{ opacity: 0, y: 20 }}
+ 188→            animate={{ opacity: 1, y: 0 }}
+ 189→            transition={{ delay: 0.4 }}
+ 190→            onClick={() => navigate('/promotion/settings')}
+ 191→            className="bg-white/5 border border-white/10 rounded-xl p-6 text-left hover:bg-white/10 transition-all group cursor-pointer"
+ 192→          >
+ 193→            <div className="flex items-center justify-between mb-4">
+ 194→              <Link2 className="w-8 h-8 text-green-400" />
+ 195→              <ChevronRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+ 196→            </div>
+ 197→            <h3 className="text-lg font-semibold mb-1">平台授权</h3>
+ 198→            <p className="text-white/60 text-sm">连接社交账号，实现一键发布</p>
+ 199→          </motion.button>
+ 200→
+ 201→          <motion.button
+ 202→            initial={{ opacity: 0, y: 20 }}
+ 203→            animate={{ opacity: 1, y: 0 }}
+ 204→            transition={{ delay: 0.45 }}
+ 205→            onClick={() => navigate('/promotion/templates')}
+ 206→            className="bg-white/5 border border-white/10 rounded-xl p-6 text-left hover:bg-white/10 transition-all group cursor-pointer"
+ 207→          >
+ 208→            <div className="flex items-center justify-between mb-4">
+ 209→              <Calendar className="w-8 h-8 text-purple-400" />
+ 210→              <ChevronRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+ 211→            </div>
+ 212→            <h3 className="text-lg font-semibold mb-1">文案模板</h3>
+ 213→            <p className="text-white/60 text-sm">使用预设模板快速创建内容</p>
+ 214→          </motion.button>
+ 215→        </div>
+ 216→
+ 217→        <motion.div
+ 218→          initial={{ opacity: 0, y: 20 }}
+ 219→          animate={{ opacity: 1, y: 0 }}
+ 220→          transition={{ delay: 0.45 }}

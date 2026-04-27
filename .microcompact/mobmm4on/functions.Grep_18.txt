@@ -1,0 +1,1 @@
+{"results":[{"file":"src/supabase/types.ts","matches":[{"line":11,"content":"    Tables: {"}]}],"pattern":"Tables: \\{","path":"src/supabase/types.ts","totalMatches":1}

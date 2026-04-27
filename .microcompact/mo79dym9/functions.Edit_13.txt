@@ -1,0 +1,49 @@
+The file /home/project/src/pages/PromotionDetail.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 149→    const baseUrl = (window as any).MEOO_CONFIG?.meoo_app_access_url || location.origin;
+ 150→    return `${baseUrl}/#/promotion/${id}`;
+ 151→  }
+ 152→
+ 153→  async function copyContent(content: string, platform: string) {
+ 154→    try {
+ 155→      const manualPlatforms = ['wechat', 'pengyouquan'];
+ 156→      let contentToCopy = content;
+ 157→
+ 158→      if (manualPlatforms.includes(platform)) {
+ 159→        const promotionLink = getPromotionLink();
+ 160→        contentToCopy = `${content}\n\n---\n📎 查看完整推广内容：${promotionLink}`;
+ 161→      }
+ 162→
+ 163→      if (navigator.clipboard && navigator.clipboard.writeText) {
+ 164→        await navigator.clipboard.writeText(contentToCopy);
+ 165→        setCopiedPlatform(platform);
+ 166→        setTimeout(() => setCopiedPlatform(null), 2000);
+ 167→      } else {
+ 168→        const textArea = document.createElement('textarea');
+ 169→        textArea.value = contentToCopy;
+ 170→        textArea.style.position = 'fixed';
+ 171→        textArea.style.left = '-999999px';
+ 172→        document.body.appendChild(textArea);
+ 173→        textArea.focus();
+ 174→        textArea.select();
+ 175→        try {
+ 176→          document.execCommand('copy');
+ 177→          setCopiedPlatform(platform);
+ 178→          setTimeout(() => setCopiedPlatform(null), 2000);
+ 179→        } catch (err) {
+ 180→          console.error('Copy failed:', err);
+ 181→          alert('复制失败，请手动复制');
+ 182→        }
+ 183→        document.body.removeChild(textArea);
+ 184→      }
+ 185→    } catch (err) {
+ 186→      console.error('Copy failed:', err);
+ 187→      alert('复制失败，请手动复制');
+ 188→    }
+ 189→  }
+ 190→
+ 191→  async function publishToPlatforms() {
+ 192→    if (!promotion || selectedPlatforms.length === 0) return;
+ 193→
+ 194→    setPublishing(true);

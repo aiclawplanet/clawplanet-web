@@ -1,0 +1,14 @@
+The file /home/project/src/pages/Home.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 371→          </Link>
+ 372→
+ 373→          {/* User */}
+ 374→          <Link
+ 375→            to="/category/all"
+ 376→            className="group relative overflow-hidden rounded-[20px] bg-white dark:bg-white/5 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] p-4 hover:border-[#10B981]/50 card-hover"
+ 377→          >
+ 378→            <div className="relative z-10 flex flex-col items-center text-center">
+ 379→              <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-premium">
+ 380→                <Search className="w-6 h-6 text-white" />
+ 381→              </div>

@@ -1,0 +1,16 @@
+The file /home/project/functions/publish-to-platforms/index.ts has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 121→      success: true,
+ 122→      postId: publishData.data?.article_id,
+ 123→      postUrl: `https://juejin.cn/post/${publishData.data?.article_id}`,
+ 124→    };
+ 125→  } catch (error) {
+ 126→    const errorMessage = error instanceof Error ? error.message : '发布失败';
+ 127→    return { platform: 'juejin', success: false, error: errorMessage };
+ 128→  }
+ 129→}
+ 130→
+ 131→async function publishToWeibo(
+ 132→  token: string,
+ 133→  content: string

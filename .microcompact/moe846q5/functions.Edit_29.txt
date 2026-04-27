@@ -1,0 +1,13 @@
+The file /home/project/src/pages/Home.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 270→        initial={{ opacity: 0, y: 20 }}
+ 271→        animate={{ opacity: 1, y: 0 }}
+ 272→        className="mb-8"
+ 273→      >
+ 274→        <div className="relative overflow-hidden rounded-[20px] bg-white/5 dark:bg-white/5 backdrop-blur-xl border border-white/[0.08] h-48 md:h-56 shadow-premium">
+ 275→          {/* 微动效背景光斑 - 与地球背景融合 */}
+ 276→          <div className="absolute inset-0 overflow-hidden">
+ 277→            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-[#8B5CF6]/30 rounded-full blur-[60px] animate-float"></div>
+ 278→            <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-[#3B82F6]/30 rounded-full blur-[80px] animate-float" style={{ animationDelay: '-7s' }}></div>
+ 279→            <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-[#10B981]/20 rounded-full blur-[40px] animate-float" style={{ animationDelay: '-14s' }}></div>

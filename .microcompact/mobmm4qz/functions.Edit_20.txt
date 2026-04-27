@@ -1,0 +1,25 @@
+The file /home/project/src/pages/ToolDetail.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+   1→import React, { useEffect, useState } from 'react';
+   2→import { useParams, Link } from 'react-router-dom';
+   3→import { motion } from 'framer-motion';
+   4→import { Heart, Share2, ExternalLink, MessageCircle, Eye, Award, ChevronLeft, Send, Smartphone, Globe, AppWindow, Sparkles, Star, ThumbsUp, ThumbsDown } from 'lucide-react';
+   5→import { supabase } from '../supabase/client';
+   6→import type { Tables } from '../supabase/types';
+   7→
+   8→type Tool = Tables<'tools'>;
+   9→type Comment = Tables<'comments'>;
+  10→type Profile = Tables<'profiles'>;
+  11→type PlatformLink = Tables<'tool_platform_links'>;
+  12→
+  13→interface CommentWithLikes extends Comment {
+  14→  user?: Profile;
+  15→  likes_count?: number;
+  16→  user_liked?: boolean;
+  17→}
+  18→
+  19→export function ToolDetail() {
+  20→  const { id } = useParams<{ id: string }>();
+  21→  const [tool, setTool] = useState<Tool & { developer?: Profile; certificate?: { certificate_code: string }; rating?: number; rating_count?: number } | null>(null);
+  22→  const [platformLinks, setPlatformLinks] = useState<PlatformLink[]>([]);

@@ -1,0 +1,11 @@
+Error: Could not find text to replace in "/home/project/src/pages/PromotionDetail.tsx". Tried exact text matching strategy.
+
+请检查是否有以下常见问题：
+- 中英文字符不匹配（如中文引号vs英文引号）
+- 空格缩进数量不一致
+- 引号未正确转义
+- 换行符差异
+
+搜索的内容 (old_string):
+"  function getPromotionLink(): string {\n    const baseUrl = (window as any).MEOO_CONFIG?.meoo_app_access_url || location.origin;\n    return `${baseUrl}/#/promotionLink] = useState(false);\n  }\n\n  }\n  }\n  }\n\n  async function copyContent(content: string, platform: string) {\n    try {\n      const manualPlatforms = ['wechat', 'pengyouquan'];\n      let contentToCopy = content;\n\n      if (manualPlatforms.includes(platform)) {\n        const promotionLink = getPromotionLink();\n        contentToCopy = `${content}\\n\\n---\\n🔗 在虾蛋星球发现更多好工具：${promotionLink}`;\n      }\n\n      if (navigator.clipboard && navigator.clipboard.writeText) {\n        await navigator.clipboard.writeText(contentToCopy);\n        setCopiedPlatform(platform);\n        setTimeout(() => setCopiedPlatform(null), 2000);\n      } else {\n        const textArea = document.createElement('textarea');\n        textArea.value = contentToCopy;\n        textArea.style.position = 'fixed';\n        textArea.style.left = '-999999px';\n        document.body.appendChild(textArea);\n        textArea.focus();\n        textArea.select();\n        try {\n          document.execCommand('copy');\n          setCopiedPlatform(platform);\n          setTimeout(() => setCopiedPlatform(null), 2000);\n        } catch (err) {\n          console.error('Copy failed:', err);\n          alert('复制失败，请手动复制');\n        }\n        document.body.removeChild(textArea);\n      }\n    } catch (err) {\n      console.error('Copy failed:', err);\n      alert('复制失败，请手动复制');\n    }\n  }"
+

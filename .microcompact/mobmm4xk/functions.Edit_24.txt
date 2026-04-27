@@ -1,0 +1,75 @@
+The file /home/project/src/pages/ToolDetail.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+ 182→      setIsSubmitting(false);
+ 183→    }
+ 184→  }
+ 185→
+ 186→  async function handleJump(url: string, linkId?: string) {
+ 187→    if (!tool) return;
+ 188→    window.open(url, '_blank');
+ 189→    await supabase.rpc('increment_tool_jump', { tool_id: tool.id });
+ 190→  }
+ 191→
+ 192→  async function handleLikeComment(commentId: string) {
+ 193→    const { data: { user } } = await supabase.auth.getUser();
+ 194→    if (!user) {
+ 195→      alert('请先登录');
+ 196→      return;
+ 197→    }
+ 198→
+ 199→    const isLiked = likedComments.has(commentId);
+ 200→    const newLikedComments = new Set(likedComments);
+ 201→
+ 202→    if (isLiked) {
+ 203→      newLikedComments.delete(commentId);
+ 204→      // Update comment likes count
+ 205→      setComments(prev => prev.map(c =>
+ 206→        c.id === commentId
+ 207→          ? { ...c, likes_count: Math.max(0, (c.likes_count || 0) - 1), user_liked: false }
+ 208→          : c
+ 209→      ));
+ 210→    } else {
+ 211→      newLikedComments.add(commentId);
+ 212→      // Update comment likes count
+ 213→      setComments(prev => prev.map(c =>
+ 214→        c.id === commentId
+ 215→          ? { ...c, likes_count: (c.likes_count || 0) + 1, user_liked: true }
+ 216→          : c
+ 217→      ));
+ 218→    }
+ 219→
+ 220→    setLikedComments(newLikedComments);
+ 221→    localStorage.setItem(`liked_comments_${user.id}`, JSON.stringify(Array.from(newLikedComments)));
+ 222→
+ 223→    // Update in database
+ 224→    const comment = comments.find(c => c.id === commentId);
+ 225→    if (comment) {
+ 226→      const newLikesCount = isLiked
+ 227→        ? Math.max(0, (comment.likes_count || 0) - 1)
+ 228→        : (comment.likes_count || 0) + 1;
+ 229→
+ 230→      await supabase
+ 231→        .from('comments')
+ 232→        .update({ likes_count: newLikesCount })
+ 233→        .eq('id', commentId);
+ 234→    }
+ 235→  }
+ 236→
+ 237→  function getPlatformIcon(platform: string) {
+ 238→    if (platform.includes('miniprogram')) return '💚';
+ 239→    if (platform.includes('ios')) return '🍎';
+ 240→    if (platform.includes('android')) return '🤖';
+
+<system-reminder>
+⚠️ REPEATED FILE MODIFICATION WARNING: You have modified "/home/project/src/pages/ToolDetail.tsx" 5 times (Write + Edit combined)!
+
+You keep rewriting or editing the same file. This is a strong sign your current approach is not working.
+
+🛑 REQUIRED ACTIONS:
+1. STOP and think: why do you keep modifying the same file?
+2. If the content keeps being wrong, try a fundamentally different approach
+3. If you're making incremental fixes, consolidate them into ONE write instead of many small changes
+
+⏰ 3 more attempt(s) before modifications to this file are AUTOMATICALLY BLOCKED.
+</system-reminder>

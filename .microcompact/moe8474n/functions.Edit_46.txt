@@ -1,0 +1,15 @@
+The file /home/project/src/components/Header.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+  78→            <Link to="/join" className="text-white/70 hover:text-white transition-colors">
+  79→              入驻
+  80→            </Link>
+  81→
+  82→            {/* Notifications */}
+  83→            <div className="flex items-center space-x-3">
+  84→              <button className="relative p-2 text-white/70 hover:text-white transition-colors">
+  85→                <Bell className="w-5 h-5" />
+  86→                {notificationCount > 0 && (
+  87→                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center">
+  88→                    {notificationCount > 9 ? '9+' : notificationCount}
+  89→                  </span>

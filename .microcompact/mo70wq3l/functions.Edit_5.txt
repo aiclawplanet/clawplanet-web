@@ -1,0 +1,11 @@
+Error: Could not find text to replace in "/home/project/src/pages/DeveloperJoin.tsx". Tried exact text matching strategy.
+
+请检查是否有以下常见问题：
+- 中英文字符不匹配（如中文引号vs英文引号）
+- 空格缩进数量不一致
+- 引号未正确转义
+- 换行符差异
+
+搜索的内容 (old_string):
+"          <motion.p\n            initial={{ opacity: 0, y: 20 }}\n            animate={{ opacity: 1, y: 0 }}\n            transition={{ delay: 0.3 }}\n            className=\"text-white/60 mb-2 text-center max-w-md\"\n          >\n            加入虾匠计划，展示你的作品，获得更多曝光和用户\n          </motion.p>\n          <motion.div"
+

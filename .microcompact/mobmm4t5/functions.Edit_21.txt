@@ -1,0 +1,14 @@
+The file /home/project/src/pages/ToolDetail.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+  19→export function ToolDetail() {
+  20→  const { id } = useParams<{ id: string }>();
+  21→  const [tool, setTool] = useState<Tool & { developer?: Profile; certificate?: { certificate_code: string }; rating?: number; rating_count?: number } | null>(null);
+  22→  const [platformLinks, setPlatformLinks] = useState<PlatformLink[]>([]);
+  23→  const [comments, setComments] = useState<CommentWithLikes[]>([]);
+  24→  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
+  25→  const [relatedTools, setRelatedTools] = useState<Tool[]>([]);
+  26→  const [loading, setLoading] = useState(true);
+  27→  const [newComment, setNewComment] = useState('');
+  28→  const [isSubmitting, setIsSubmitting] = useState(false);
+  29→  const [isFavorited, setIsFavorited] = useState(false);

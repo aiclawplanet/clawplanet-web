@@ -1,0 +1,16 @@
+The file /home/project/src/pages/Home.tsx has been updated. Made 1 replacement.
+
+Here's the result of running `cat -n` on a snippet of the edited file:
+  83→    }, 5000);
+  84→    return () => clearInterval(timer);
+  85→  }, []);
+  86→
+  87→  // Generate personalized recommendations
+  88→  useEffect(() => {
+  89→    generateRecommendations();
+  90→  }, [categories, featuredTools, newTools, recentlyViewed]);
+  91→
+  92→  const handleSearch = (e: React.FormEvent) => {
+  93→    e.preventDefault();
+  94→    if (searchQuery.trim()) {
+  95→      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
