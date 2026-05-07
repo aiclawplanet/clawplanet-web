@@ -1687,6 +1687,9 @@ export type Database = {
           tags: string[] | null
           updated_at: string | null
           view_count: number | null
+          offline_reason: string | null
+          offline_reason_type: string | null
+          rejection_reason: string | null
         }
         Insert: {
           category_id?: string | null
@@ -1706,6 +1709,9 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string | null
           view_count?: number | null
+          offline_reason?: string | null
+          offline_reason_type?: string | null
+          rejection_reason?: string | null
         }
         Update: {
           category_id?: string | null
@@ -1725,6 +1731,9 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string | null
           view_count?: number | null
+          offline_reason?: string | null
+          offline_reason_type?: string | null
+          rejection_reason?: string | null
         }
         Relationships: [
           {

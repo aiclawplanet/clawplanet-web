@@ -53,17 +53,40 @@ export function DeveloperDashboard() {
           totalJumps: toolsData.reduce((sum, t) => sum + (t.jump_count || 0), 0),
         });
 
-        // Generate mock trend data (last 7 days)
-        const last7Days = Array.from({ length: 7 }, (_, i) => {
+        // Fetch real historical data from browsing_history
+        const toolIds = toolsData.map(t => t.id);
+        const { data: historyData } = await supabase
+          .from('browsing_history')
+          .select('tool_id, viewed_at')
+          .in('tool_id', toolIds)
+          .gte('viewed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+        // Aggregate by date (last 7 days)
+        const dateMap: Record<string, { views: number; jumps: number }> = {};
+        for (let i = 0; i < 7; i++) {
           const date = new Date();
           date.setDate(date.getDate() - (6 - i));
-          return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-        });
+          const dateKey = date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+          dateMap[dateKey] = { views: 0, jumps: 0 };
+        }
 
-        const trendData = last7Days.map((date, index) => ({
-          name: date,
-          views: Math.floor(Math.random() * 500) + 100 + (index * 50),
-          jumps: Math.floor(Math.random() * 200) + 50 + (index * 20),
+        if (historyData) {
+          historyData.forEach(record => {
+            if (record.viewed_at) {
+              const date = new Date(record.viewed_at);
+              const dateKey = date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+              if (dateMap[dateKey]) {
+                dateMap[dateKey].views += 1;
+                dateMap[dateKey].jumps += 1;
+              }
+            }
+          });
+        }
+
+        const trendData = Object.entries(dateMap).map(([name, data]) => ({
+          name,
+          views: data.views,
+          jumps: data.jumps,
         }));
         setChartData(trendData);
 
@@ -369,17 +392,21 @@ function StatusBadge({ status }: { status: string }) {
     pending: 'bg-yellow-500/20 text-yellow-400',
     approved: 'bg-green-500/20 text-green-400',
     rejected: 'bg-red-500/20 text-red-400',
+    offline: 'bg-orange-500/20 text-orange-400',
+    forced_offline: 'bg-red-500/20 text-red-400',
   };
 
   const labels: Record<string, string> = {
     pending: '审核中',
-    approved: '已通过',
-    rejected: '未通过',
+    approved: '已上线',
+    rejected: '审核未通过',
+    offline: '已下架',
+    forced_offline: '强制下线',
   };
 
   return (
     <span className={`px-2 py-0.5 rounded text-xs ${styles[status] || styles.pending}`}>
-      {labels[status] || '审核中'}
+      {labels[status] || status}
     </span>
   );
 }

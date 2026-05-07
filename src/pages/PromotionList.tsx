@@ -308,9 +308,9 @@ export function PromotionList() {
                       <ExternalLink className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => navigate(`/promotion/${promotion.id}/edit`)}
+                      onClick={() => navigate(`/promotion/${promotion.id}`)}
                       className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-                      title="编辑"
+                      title="编辑（进入详情页内编辑）"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>

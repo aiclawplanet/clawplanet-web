@@ -36,6 +36,7 @@ import { DeveloperReputation } from './pages/DeveloperReputation';
 import { PromoterDemandList } from './pages/PromoterDemandList';
 import { MyTools } from './pages/MyTools';
 import { ToolEdit } from './pages/ToolEdit';
+import { AdminRoute } from './components/AdminRoute';
 
 function App() {
   return (
@@ -54,7 +55,7 @@ function App() {
           <Route path="promoter/stats" element={<PromoterStats />} />
           <Route path="promoter/join" element={<PromoterJoin />} />
           <Route path="promoters" element={<PromoterList />} />
-          <Route path="admin" element={<AdminDashboard />} />
+          <Route path="admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="developer/:id" element={<DeveloperProfile />} />
           <Route path="promote" element={<PromoteTool />} />
           <Route path="promotion" element={<PromotionCenter />} />

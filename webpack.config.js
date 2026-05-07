@@ -9,7 +9,8 @@ module.exports = (env, argv) => {
     entry: './src/index.tsx',
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: 'bundle.js'
+      filename: 'bundle.js',
+      clean: true
     },
     module: {
       rules: [
@@ -50,6 +51,13 @@ module.exports = (env, argv) => {
         rewrites: [
           { from: /^\/_p\/\d+\//, to: '/index.html' }
         ]
+      },
+      proxy: {
+        '/sb-api': {
+          target: 'https://www.aiclawplanet.com',
+          changeOrigin: true,
+          secure: false
+        }
       }
     },
     plugins: [

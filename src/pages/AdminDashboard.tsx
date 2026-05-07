@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Wrench, MessageSquare, Eye, CheckCircle, XCircle, Clock, Shield,
   Code, Award, DollarSign, Briefcase, TrendingUp, ChevronRight, AlertCircle,
-  UserCheck, UserX, Settings, BarChart3, Lock, User, Star, Trash2, Edit,
+  UserCheck, UserX, Settings, BarChart3, User, Star, Trash2, Edit,
   ExternalLink, ArrowDownCircle
 } from 'lucide-react';
 import { supabase } from '../supabase/client';
@@ -46,31 +46,19 @@ export function AdminDashboard() {
     totalViews: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+
+  // 拒绝/强制下线原因模态框
+  const [reasonModal, setReasonModal] = useState<{
+    open: boolean;
+    type: 'reject' | 'forced_offline';
+    toolId: string;
+    toolName: string;
+    reason: string;
+  }>({ open: false, type: 'reject', toolId: '', toolName: '', reason: '' });
 
   useEffect(() => {
-    checkAdmin();
+    fetchAllData();
   }, []);
-
-  async function checkAdmin() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true);
-        fetchAllData();
-      } else {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
-    }
-  }
 
   async function fetchAllData() {
     try {
@@ -200,7 +188,10 @@ export function AdminDashboard() {
   async function handleApproveTool(toolId: string) {
     const { error } = await supabase
       .from('tools')
-      .update({ status: 'approved' })
+      .update({
+        status: 'approved',
+        updated_at: new Date().toISOString()
+      })
       .eq('id', toolId);
 
     if (!error) {
@@ -211,27 +202,73 @@ export function AdminDashboard() {
   }
 
   async function handleRejectTool(toolId: string) {
-    const { error } = await supabase
-      .from('tools')
-      .update({ status: 'rejected' })
-      .eq('id', toolId);
-
-    if (!error) {
-      setPendingTools(pendingTools.filter(tool => tool.id !== toolId));
-      await fetchAllTools();
-      setStats({ ...stats, pendingTools: stats.pendingTools - 1 });
+    // 打开拒绝原因填写模态框
+    const tool = pendingTools.find(t => t.id === toolId);
+    if (tool) {
+      setReasonModal({
+        open: true,
+        type: 'reject',
+        toolId,
+        toolName: tool.name,
+        reason: ''
+      });
     }
   }
 
-  async function handleUnpublishTool(toolId: string) {
-    const { error } = await supabase
-      .from('tools')
-      .update({ status: 'rejected' })
-      .eq('id', toolId);
-
-    if (!error) {
-      await fetchAllTools();
+  async function handleForcedOffline(toolId: string) {
+    // 打开强制下线原因填写模态框
+    const tool = allTools.find(t => t.id === toolId);
+    if (tool) {
+      setReasonModal({
+        open: true,
+        type: 'forced_offline',
+        toolId,
+        toolName: tool.name,
+        reason: ''
+      });
     }
+  }
+
+  async function confirmReasonSubmit() {
+    if (!reasonModal.reason.trim()) return;
+
+    if (reasonModal.type === 'reject') {
+      const { error } = await supabase
+        .from('tools')
+        .update({
+          status: 'rejected',
+          rejection_reason: reasonModal.reason.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', reasonModal.toolId);
+
+      if (!error) {
+        setPendingTools(pendingTools.filter(tool => tool.id !== reasonModal.toolId));
+        await fetchAllTools();
+        setStats({ ...stats, pendingTools: stats.pendingTools - 1 });
+      }
+    } else if (reasonModal.type === 'forced_offline') {
+      const { error } = await supabase
+        .from('tools')
+        .update({
+          status: 'forced_offline',
+          offline_reason: reasonModal.reason.trim(),
+          offline_reason_type: 'admin_forced',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', reasonModal.toolId);
+
+      if (!error) {
+        await fetchAllTools();
+      }
+    }
+
+    setReasonModal({ open: false, type: 'reject', toolId: '', toolName: '', reason: '' });
+  }
+
+  // 兼容旧的 handleUnpublishTool（改为强制下线）
+  async function handleUnpublishTool(toolId: string) {
+    await handleForcedOffline(toolId);
   }
 
   async function handleDeleteTool(toolId: string) {
@@ -318,20 +355,6 @@ export function AdminDashboard() {
     return (
       <div className="flex items-center justify-center min-h-screen pt-20">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8B5CF6]"></div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <div className="w-16 h-16 rounded-2xl bg-red-500/20 flex items-center justify-center mb-4">
-            <Lock className="w-8 h-8 text-red-400" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">无权访问</h2>
-          <p className="text-white/60">你没有管理员权限</p>
-        </div>
       </div>
     );
   }
@@ -430,6 +453,65 @@ export function AdminDashboard() {
         )}
         {activeTab === 'users' && (
           <UsersTab key="users" users={users} />
+        )}
+      </AnimatePresence>
+
+      {/* 拒绝/强制下线原因填写模态框 */}
+      <AnimatePresence>
+        {reasonModal.open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+            onClick={() => setReasonModal({ open: false, type: 'reject', toolId: '', toolName: '', reason: '' })}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#1A1A2E] border border-white/10 rounded-2xl p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-bold mb-2">
+                {reasonModal.type === 'reject' ? '拒绝工具上线' : '强制下线工具'}
+              </h3>
+              <p className="text-white/60 text-sm mb-4">
+                {reasonModal.toolName}
+              </p>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  {reasonModal.type === 'reject' ? '拒绝原因（将告知开发者）' : '下线原因（将告知开发者）'}
+                </label>
+                <textarea
+                  value={reasonModal.reason}
+                  onChange={(e) => setReasonModal({ ...reasonModal, reason: e.target.value })}
+                  placeholder="请输入原因，帮助开发者了解问题所在..."
+                  rows={4}
+                  className="w-full px-4 py-3 bg-[#0F0F1A] border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-red-500 resize-none"
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setReasonModal({ open: false, type: 'reject', toolId: '', toolName: '', reason: '' })}
+                  className="px-4 py-2 bg-white/5 text-white/60 rounded-xl hover:bg-white/10 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={confirmReasonSubmit}
+                  disabled={!reasonModal.reason.trim()}
+                  className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                    reasonModal.reason.trim()
+                      ? 'bg-red-500 text-white hover:bg-red-600'
+                      : 'bg-red-500/30 text-white/40 cursor-not-allowed'
+                  }`}
+                >
+                  确认{reasonModal.type === 'reject' ? '拒绝' : '强制下线'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -569,6 +651,8 @@ function AllToolsTab({ tools, onUnpublish, onDelete, onTogglePremium }: {
     approved: tools.filter(t => t.status === 'approved').length,
     pending: tools.filter(t => t.status === 'pending').length,
     rejected: tools.filter(t => t.status === 'rejected').length,
+    offline: tools.filter(t => t.status === 'offline').length,
+    forced_offline: tools.filter(t => t.status === 'forced_offline').length,
   };
 
   return (
@@ -589,7 +673,9 @@ function AllToolsTab({ tools, onUnpublish, onDelete, onTogglePremium }: {
           { id: 'all', label: '全部', count: statusCounts.all },
           { id: 'approved', label: '已上线', count: statusCounts.approved },
           { id: 'pending', label: '审核中', count: statusCounts.pending },
-          { id: 'rejected', label: '已下架', count: statusCounts.rejected },
+          { id: 'rejected', label: '审核未通过', count: statusCounts.rejected },
+          { id: 'offline', label: '主动下架', count: statusCounts.offline },
+          { id: 'forced_offline', label: '强制下架', count: statusCounts.forced_offline },
         ].map((status) => (
           <button
             key={status.id}
@@ -697,7 +783,7 @@ function AllToolsTab({ tools, onUnpublish, onDelete, onTogglePremium }: {
                     className="flex items-center space-x-1 px-3 py-2 bg-orange-500/20 text-orange-400 rounded-xl hover:bg-orange-500/30 transition-colors"
                   >
                     <ArrowDownCircle className="w-4 h-4" />
-                    <span className="text-sm">下架</span>
+                    <span className="text-sm">强制下线</span>
                   </button>
                 )}
                 <button
@@ -757,11 +843,13 @@ function AllToolsTab({ tools, onUnpublish, onDelete, onTogglePremium }: {
 
 function StatusBadge({ status }: { status: string }) {
   const configs: Record<string, { text: string; className: string }> = {
-    pending: { text: '审核中', className: 'bg-yellow-500/20 text-yellow-400' },
-    approved: { text: '已上线', className: 'bg-green-500/20 text-green-400' },
-    rejected: { text: '已下架', className: 'bg-red-500/20 text-red-400' },
+    pending:      { text: '审核中',      className: 'bg-yellow-500/20 text-yellow-400' },
+    approved:     { text: '已上线',      className: 'bg-green-500/20 text-green-400' },
+    rejected:     { text: '审核未通过',  className: 'bg-red-500/20 text-red-400' },
+    offline:      { text: '已下架',      className: 'bg-orange-500/20 text-orange-400' },
+    forced_offline: { text: '被强制下架', className: 'bg-red-500/20 text-red-400' },
   };
-  const config = configs[status] || configs.pending;
+  const config = configs[status] || { text: status, className: 'bg-white/10 text-white/60' };
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs ${config.className}`}>
       {config.text}

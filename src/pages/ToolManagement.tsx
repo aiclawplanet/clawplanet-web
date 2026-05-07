@@ -643,17 +643,21 @@ function StatusBadge({ status }: { status: string }) {
     pending: 'bg-yellow-500/20 text-yellow-400',
     approved: 'bg-green-500/20 text-green-400',
     rejected: 'bg-red-500/20 text-red-400',
+    offline: 'bg-orange-500/20 text-orange-400',
+    forced_offline: 'bg-red-500/20 text-red-400',
   };
 
   const labels: Record<string, string> = {
     pending: '审核中',
-    approved: '已通过',
-    rejected: '未通过',
+    approved: '已上线',
+    rejected: '审核未通过',
+    offline: '已下架',
+    forced_offline: '强制下线',
   };
 
   return (
     <span className={`px-2 py-0.5 rounded text-xs ${styles[status] || styles.pending}`}>
-      {labels[status] || '审核中'}
+      {labels[status] || status}
     </span>
   );
 }

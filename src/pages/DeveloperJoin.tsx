@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Upload, Check, AlertCircle, Code, ChevronRight, Plus, Trash2, ExternalLink, Smartphone, Globe, AppWindow } from 'lucide-react';
+import { ChevronLeft, Upload, Check, AlertCircle, Code, ChevronRight, Plus, Trash2, ExternalLink, Smartphone, Globe, AppWindow, CheckCircle, XCircle, Clock, Wrench as WrenchIcon } from 'lucide-react';
 import { supabase } from '../supabase/client';
 import { decode } from 'base64-arraybuffer';
+import type { Tables } from '../supabase/types';
+
+type Tool = Tables<'tools'>;
 
 interface PlatformLink {
   id: string;
@@ -68,11 +71,37 @@ export function DeveloperJoin() {
   const [success, setSuccess] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [myTools, setMyTools] = useState<Tool[]>([]);
+  const [isDeveloper, setIsDeveloper] = useState(false);
+  // viewMode: 'form' = 新工具表单, 'existing' = 已有工具列表
+  const [viewMode, setViewMode] = useState<'form' | 'existing'>('form');
 
   useEffect(() => {
     async function checkUser() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+
+      if (user) {
+        // 检查是否为已认证开发者
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        const devStatus = profile?.role === 'developer' || profile?.role === 'admin';
+        setIsDeveloper(devStatus);
+
+        // 获取用户已有工具（任何状态）
+        const { data: toolsData } = await supabase
+          .from('tools')
+          .select('*')
+          .eq('developer_id', user.id)
+          .order('created_at', { ascending: false });
+
+        setMyTools(toolsData || []);
+      }
+
       setCheckingAuth(false);
     }
     checkUser();
@@ -330,6 +359,21 @@ export function DeveloperJoin() {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
+  // 状态徽章组件
+  function StatusBadge({ status }: { status: string }) {
+    const config: Record<string, { label: string; color: string }> = {
+      pending: { label: '审核中', color: 'text-yellow-400 bg-yellow-400/10' },
+      approved: { label: '已上线', color: 'text-green-400 bg-green-400/10' },
+      rejected: { label: '已拒绝', color: 'text-red-400 bg-red-400/10' },
+    };
+    const c = config[status] || config.pending;
+    return (
+      <span className={`text-xs px-2 py-0.5 rounded-full ${c.color}`}>
+        {c.label}
+      </span>
+    );
+  }
+
   if (checkingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen pt-20">
@@ -450,17 +494,97 @@ export function DeveloperJoin() {
     );
   }
 
-  return (
+  // ✅ 已认证开发者：展示已有工具 + 可新增工具
+  if (isDeveloper) {
+    // 根据 viewMode 切换：'existing' 看列表，'form' 提交新工具
+    if (viewMode === 'form') {
+      // 继续执行下面的主表单（复用表单逻辑）
+    } else {
+      return (
+      <div className="pt-20 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto pb-20">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center text-white/60 hover:text-white mb-2 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              返回首页
+            </button>
+            <h1 className="text-2xl font-bold">我的工具</h1>
+            <p className="text-white/60 text-sm mt-1">已认证开发者 · 可管理所有工具</p>
+          </div>
+          <button
+            onClick={() => setViewMode('form')}
+            className="flex items-center gap-2 px-4 py-2 bg-[#8B5CF6] text-white rounded-xl hover:bg-[#7C3AED] transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            提交新工具
+          </button>
+        </div>
+
+        {/* 开发者状态横幅 */}
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+            <CheckCircle className="w-5 h-5 text-green-400" />
+          </div>
+          <div>
+            <p className="font-medium text-green-400">你已是认证开发者</p>
+            <p className="text-white/60 text-sm">可以直接提交新工具，审核通过后自动上线</p>
+          </div>
+        </div>
+
+        {/* 已有工具列表 */}
+        {myTools.length === 0 ? (
+          <div className="text-center py-16 text-white/40">
+            <WrenchIcon className="w-12 h-12 mx-auto mb-3 opacity-40" />
+            <p>还没有提交过工具</p>
+            <p className="text-sm mt-1">点击右上角"提交新工具"开始吧</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {myTools.map(tool => (
+              <div
+                key={tool.id}
+                onClick={() => navigate(`/tool/${tool.id}/manage`)}
+                className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4 hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                {tool.icon_url ? (
+                  <img src={tool.icon_url} alt={tool.name} className="w-12 h-12 rounded-xl object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8B5CF6]/20 to-[#3B82F6]/20 flex items-center justify-center">
+                    <WrenchIcon className="w-6 h-6 text-[#8B5CF6]" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium truncate">{tool.name}</p>
+                    <StatusBadge status={tool.status || 'pending'} />
+                  </div>
+                  <p className="text-xs text-white/40 truncate">{tool.description || '暂无描述'}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-white/30 flex-shrink-0" />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+  } // ← 关闭 isDeveloper 块，viewMode==='form' 时透传到主表单
+
+  return(
     <div className="pt-20 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto pb-20">
       {/* Header */}
       <div className="flex items-center space-x-4 mb-8">
-        <Link
-          to="/"
+        <button
+          onClick={() => isDeveloper ? setViewMode('existing') : navigate('/')}
           className="flex items-center text-white/60 hover:text-white transition-colors"
         >
           <ChevronLeft className="w-5 h-5 mr-1" />
-          返回
-        </Link>
+          {isDeveloper ? '返回工具列表' : '返回'}
+        </button>
         <h1 className="text-2xl font-bold">入驻虾蛋星球</h1>
       </div>
 

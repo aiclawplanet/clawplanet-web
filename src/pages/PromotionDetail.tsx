@@ -104,6 +104,9 @@ export function PromotionDetail() {
   const [publishResults, setPublishResults] = useState<PublishResult[] | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [editingPlatform, setEditingPlatform] = useState<string | null>(null);
+  const [editedContent, setEditedContent] = useState<Record<string, any> | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -195,47 +198,117 @@ export function PromotionDetail() {
     }
   }
 
-  function getPromotionLink(): string {
-    const baseUrl = (window as any).MEOO_CONFIG?.meoo_app_access_url || location.origin;
-    return `${baseUrl}/#/promotion/${id}`;
+  function getToolDetailLink(): string {
+    // 始终使用线上地址，复制/发布的内容是给用户在外面看的
+    const baseUrl = 'https://www.aiclawplanet.com';
+    const toolId = promotion?.tool_id;
+    if (!toolId) return baseUrl;
+    return `${baseUrl}/#/tool/${toolId}`;
   }
 
-  async function copyContent(content: string, platform: string) {
+  async function copyContent(platform: string) {
     try {
-      const manualPlatforms = ['wechat', 'pengyouquan'];
-      let contentToCopy = content;
+      const platformData = content[platform];
+      if (!platformData) return;
 
-      if (manualPlatforms.includes(platform)) {
-        const promotionLink = getPromotionLink();
-        contentToCopy = `${content}\n\n---\n📎 查看完整推广内容：${promotionLink}`;
+      // 构建纯文本内容
+      const textParts: string[] = [];
+      if (platformData.title) textParts.push(platformData.title);
+      if (platformData.summary) textParts.push(platformData.summary);
+      if (platformData.content) textParts.push(platformData.content);
+      if (platformData.tags) textParts.push(`标签：${platformData.tags}`);
+
+      const images = promotion?.images as string[] || [];
+      if (images.length > 0) {
+        textParts.push('【配图说明】以下截图按顺序上传：');
+        images.forEach((url, i) => {
+          textParts.push(`配图${i + 1}：${url}`);
+        });
       }
 
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(contentToCopy);
+      const toolLink = getToolDetailLink();
+      if (toolLink) {
+        textParts.push(`\n🔗 查看工具详情：${toolLink}`);
+      }
+      const plainText = textParts.join('\n\n');
+
+      // 构建 HTML 内容（图片以 <img> 标签嵌入）
+      const htmlParts: string[] = [];
+      if (platformData.title) htmlParts.push(`<h2>${escapeHtml(platformData.title)}</h2>`);
+      if (platformData.summary) htmlParts.push(`<p>${escapeHtml(platformData.summary)}</p>`);
+      if (platformData.content) {
+        // 保留正文中的换行
+        const formattedContent = escapeHtml(platformData.content).replace(/\n/g, '<br/>');
+        htmlParts.push(`<div>${formattedContent}</div>`);
+      }
+      if (platformData.tags) htmlParts.push(`<p>标签：${escapeHtml(platformData.tags)}</p>`);
+
+      // 嵌入截图（使用 <img> 标签，粘贴到支持HTML的平台时图片会直接显示）
+      if (images.length > 0) {
+        htmlParts.push('<p><strong>配图：</strong></p>');
+        images.forEach((url, i) => {
+          htmlParts.push(`<div>配图${i + 1}：<br/><img src="${url}" style="max-width:300px;" /></div>`);
+        });
+      }
+
+      // 追加工具详情链接
+      if (toolLink) {
+        htmlParts.push(`<hr/><p>🔗 查看工具详情：<a href="${toolLink}">${toolLink}</a></p>`);
+      }
+      const htmlContent = htmlParts.join('');
+
+      // 尝试用 Clipboard API 写入 HTML + 纯文本
+      if (navigator.clipboard && (navigator.clipboard as any).write) {
+        const textBlob = new Blob([plainText], { type: 'text/plain' });
+        const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+        await (navigator.clipboard as any).write([
+          new ClipboardItem({
+            'text/plain': textBlob,
+            'text/html': htmlBlob,
+          } as any),
+        ]);
         setCopiedPlatform(platform);
         setTimeout(() => setCopiedPlatform(null), 2000);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = contentToCopy;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-          document.execCommand('copy');
-          setCopiedPlatform(platform);
-          setTimeout(() => setCopiedPlatform(null), 2000);
-        } catch (err) {
-          console.error('Copy failed:', err);
-          alert('复制失败，请手动复制');
-        }
-        document.body.removeChild(textArea);
+        return;
       }
+
+      // 降级方案：只复制纯文本
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(plainText);
+        setCopiedPlatform(platform);
+        setTimeout(() => setCopiedPlatform(null), 2000);
+        return;
+      }
+
+      // 再降级：textarea 方案
+      const textArea = document.createElement('textarea');
+      textArea.value = plainText;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopiedPlatform(platform);
+        setTimeout(() => setCopiedPlatform(null), 2000);
+      } catch (err) {
+        console.error('Copy failed:', err);
+        alert('复制失败，请手动复制');
+      }
+      document.body.removeChild(textArea);
     } catch (err) {
       console.error('Copy failed:', err);
       alert('复制失败，请手动复制');
     }
+  }
+
+  function escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   async function publishToPlatforms() {
@@ -283,6 +356,51 @@ export function PromotionDetail() {
     setSelectedPlatforms(availablePlatforms);
     setShowPublishModal(true);
     setPublishResults(null);
+  }
+
+  function startEditing() {
+    if (!promotion) return;
+    setEditedContent(JSON.parse(JSON.stringify(promotion.content)));
+    setEditingPlatform(activeTab);
+  }
+
+  function updatePlatformField(platform: string, field: string, value: string) {
+    setEditedContent(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [platform]: {
+          ...prev[platform],
+          [field]: value,
+        },
+      };
+    });
+  }
+
+  async function saveEdits() {
+    if (!promotion || !editedContent) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('promotion_contents')
+        .update({ content: editedContent })
+        .eq('id', promotion.id);
+      if (error) throw error;
+      setPromotion({ ...promotion, content: editedContent });
+      setEditingPlatform(null);
+      setEditedContent(null);
+      alert('保存成功');
+    } catch (error) {
+      console.error('Error saving edits:', error);
+      alert('保存失败');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancelEditing() {
+    setEditingPlatform(null);
+    setEditedContent(null);
   }
 
   function togglePlatform(platform: string) {
@@ -336,7 +454,7 @@ export function PromotionDetail() {
     );
   }
 
-  const content = promotion.content as Record<string, { content: string; title?: string }>;
+  const content = promotion.content as Record<string, { content: string; title?: string; summary?: string; tags?: string }>;
   const platforms = Object.keys(content);
   const hasAutoPublishPlatforms = platforms.some(p => autoPublishPlatforms.includes(p));
 
@@ -378,8 +496,9 @@ export function PromotionDetail() {
                 <Settings className="w-5 h-5" />
               </button>
               <button
-                onClick={() => navigate(`/promotion/${promotion.id}/edit`)}
+                onClick={startEditing}
                 className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                title="编辑推广内容"
               >
                 <Edit3 className="w-5 h-5" />
               </button>
@@ -426,7 +545,25 @@ export function PromotionDetail() {
             })}
           </div>
 
-          {activeTab && content[activeTab] && (
+          {/* 截图展示 */}
+        {promotion.images && Array.isArray(promotion.images) && promotion.images.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <h4 className="text-sm font-medium text-white/60 mb-3">产品截图</h4>
+            <div className="grid grid-cols-3 gap-3">
+              {(promotion.images as string[]).map((url: string, idx: number) => (
+                <div key={idx} className="relative aspect-video bg-white/5 rounded-lg overflow-hidden">
+                  <img src={url} alt={`截图${idx + 1}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab && (editingPlatform ? editedContent?.[activeTab] : content[activeTab]) && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -444,38 +581,69 @@ export function PromotionDetail() {
                   })()}
                   <div>
                     <h3 className="font-medium">{platformNames[activeTab]}</h3>
-                    {content[activeTab].title && (
-                      <p className="text-white/60 text-sm">{content[activeTab].title}</p>
+                    {(editingPlatform ? editedContent?.[activeTab]?.title : content[activeTab]?.title) && (
+                      <p className="text-white/60 text-sm">{(editingPlatform ? editedContent?.[activeTab]?.title : content[activeTab]?.title)}</p>
                     )}
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {getPublishLogForPlatform(activeTab) ? (
-                    <a
-                      href={getPublishLogForPlatform(activeTab)?.platform_url || '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-2 bg-green-500/20 text-green-400 rounded-lg flex items-center gap-2 text-sm hover:bg-green-500/30 transition-colors"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      查看已发布
-                    </a>
-                  ) : autoPublishPlatforms.includes(activeTab) ? (
-                    <button
-                      onClick={() => {
-                        setSelectedPlatforms([activeTab]);
-                        setShowPublishModal(true);
-                        setPublishResults(null);
-                      }}
-                      className="px-3 py-2 bg-orange-500/20 text-orange-400 rounded-lg flex items-center gap-2 text-sm hover:bg-orange-500/30 transition-colors"
-                    >
-                      <Rocket className="w-4 h-4" />
-                      发布
-                    </button>
-                  ) : null}
+                  {editingPlatform === activeTab ? (
+                    <>
+                      <button
+                        onClick={saveEdits}
+                        disabled={saving}
+                        className="px-3 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        保存
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm"
+                      >
+                        取消
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {getPublishLogForPlatform(activeTab) ? (
+                        <a
+                          href={getPublishLogForPlatform(activeTab)?.platform_url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 bg-green-500/20 text-green-400 rounded-lg flex items-center gap-2 text-sm hover:bg-green-500/30 transition-colors"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          查看已发布
+                        </a>
+                      ) : autoPublishPlatforms.includes(activeTab) ? (
+                        <button
+                          onClick={() => {
+                            setSelectedPlatforms([activeTab]);
+                            setShowPublishModal(true);
+                            setPublishResults(null);
+                          }}
+                          className="px-3 py-2 bg-orange-500/20 text-orange-400 rounded-lg flex items-center gap-2 text-sm hover:bg-orange-500/30 transition-colors"
+                        >
+                          <Rocket className="w-4 h-4" />
+                          发布
+                        </button>
+                      ) : null}
+                      {editedContent && (
+                        <button
+                          onClick={() => setEditingPlatform(activeTab)}
+                          className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                          title="编辑此平台内容"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </>
+                  )}
                   <button
-                    onClick={() => copyContent(content[activeTab].content, activeTab)}
+                    onClick={() => copyContent(activeTab)}
                     className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                    title="复制完整内容（标题+正文+标签+截图链接）"
                   >
                     {copiedPlatform === activeTab ? (
                       <Check className="w-4 h-4 text-green-400" />
@@ -485,9 +653,110 @@ export function PromotionDetail() {
                   </button>
                 </div>
               </div>
-              <div className="bg-white/5 rounded-lg p-4 whitespace-pre-wrap text-white/80 text-sm max-h-96 overflow-y-auto">
-                {content[activeTab].content}
+
+              {editingPlatform === activeTab && editedContent?.[activeTab] ? (
+                <div className="space-y-3">
+                  {editedContent[activeTab].title !== undefined && (
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1">标题</label>
+                      <input
+                        type="text"
+                        value={editedContent[activeTab].title || ''}
+                        onChange={(e) => updatePlatformField(activeTab, 'title', e.target.value)}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500"
+                      />
+                    </div>
+                  )}
+                  {editedContent[activeTab].summary !== undefined && (
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1">摘要</label>
+                      <textarea
+                        value={editedContent[activeTab].summary || ''}
+                        onChange={(e) => updatePlatformField(activeTab, 'summary', e.target.value)}
+                        rows={2}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 resize-none"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs text-white/40 mb-1">正文</label>
+                    <textarea
+                      value={editedContent[activeTab].content || ''}
+                      onChange={(e) => updatePlatformField(activeTab, 'content', e.target.value)}
+                      rows={8}
+                      className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500 resize-none"
+                    />
+                  </div>
+                  {editedContent[activeTab].tags !== undefined && (
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1">标签</label>
+                      <input
+                        type="text"
+                        value={editedContent[activeTab].tags || ''}
+                        onChange={(e) => updatePlatformField(activeTab, 'tags', e.target.value)}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+              <div className="space-y-4">
+                {content[activeTab].title && (
+                  <div>
+                    <h4 className="text-sm font-medium text-white/60 mb-1">标题</h4>
+                    <div className="text-white/80 text-sm">{content[activeTab].title}</div>
+                  </div>
+                )}
+                {content[activeTab].summary && (
+                  <div>
+                    <h4 className="text-sm font-medium text-white/60 mb-1">摘要</h4>
+                    <div className="text-white/80 text-sm">{content[activeTab].summary}</div>
+                  </div>
+                )}
+                <div>
+                  <h4 className="text-sm font-medium text-white/60 mb-1">正文</h4>
+                  <div className="bg-white/5 rounded-lg p-4 whitespace-pre-wrap text-white/80 text-sm max-h-96 overflow-y-auto">
+                    {content[activeTab].content.split(/(【配图\d+】)/g).map((part, i) =>
+                      /^【配图\d+】$/.test(part) ? (
+                        <span key={i} className="inline-block bg-orange-500/20 text-orange-400 text-xs px-1.5 py-0.5 rounded mr-1 mb-1 align-middle">
+                          {part}
+                        </span>
+                      ) : (
+                        <span key={i}>{part}</span>
+                      )
+                    )}
+                  </div>
+                  {/* 配图展示 */}
+                  {promotion.images && Array.isArray(promotion.images) && (promotion.images as string[]).length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-white/5">
+                      <p className="text-xs text-white/40 mb-2">📸 本文案配图：</p>
+                      <div className="flex gap-2 flex-wrap">
+                        {(promotion.images as string[]).map((url: string, i) => (
+                          <div key={i} className="w-24 aspect-video bg-white/5 rounded overflow-hidden relative">
+                            <img src={url} alt={`配图${i+1}`} className="w-full h-full object-cover" />
+                            <div className="absolute bottom-0 right-0 bg-black/70 text-[10px] px-1 rounded-tl">
+                              配图{i+1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {content[activeTab].tags && (
+                  <div>
+                    <h4 className="text-sm font-medium text-white/60 mb-1">标签</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {content[activeTab].tags.split(/,|，/).map((tag, idx) => (
+                        <span key={idx} className="bg-orange-500/20 text-orange-400 text-xs px-2 py-1 rounded">
+                          {tag.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
+              )}
 
               {!autoPublishPlatforms.includes(activeTab) && (
                 <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-2">

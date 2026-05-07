@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "webpack serve",
     "build": "webpack --mode production",
+    "deploy": "powershell -File ./scripts/deploy.ps1",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

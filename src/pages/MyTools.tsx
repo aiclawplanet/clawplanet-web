@@ -92,6 +92,8 @@ export function MyTools() {
     pending: tools.filter(t => t.status === 'pending').length,
     approved: tools.filter(t => t.status === 'approved').length,
     rejected: tools.filter(t => t.status === 'rejected').length,
+    offline: tools.filter(t => t.status === 'offline').length,
+    forced_offline: tools.filter(t => t.status === 'forced_offline').length,
   };
 
   if (loading) {
@@ -145,7 +147,9 @@ export function MyTools() {
             { id: 'all', label: '全部', count: statusCounts.all, color: 'bg-white/10' },
             { id: 'approved', label: '已上线', count: statusCounts.approved, color: 'bg-green-500/20 text-green-400' },
             { id: 'pending', label: '审核中', count: statusCounts.pending, color: 'bg-yellow-500/20 text-yellow-400' },
-            { id: 'rejected', label: '未通过', count: statusCounts.rejected, color: 'bg-red-500/20 text-red-400' },
+            { id: 'rejected', label: '审核未通过', count: statusCounts.rejected, color: 'bg-red-500/20 text-red-400' },
+            { id: 'offline', label: '已下架', count: statusCounts.offline, color: 'bg-orange-500/20 text-orange-400' },
+            { id: 'forced_offline', label: '强制下线', count: statusCounts.forced_offline, color: 'bg-red-500/20 text-red-400' },
           ].map((status) => (
             <button
               key={status.id}
@@ -300,11 +304,47 @@ export function MyTools() {
                       <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                         <div className="flex items-start space-x-2">
                           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                          <div>
+                          <div className="flex-1">
                             <p className="text-red-400 font-medium text-sm">审核未通过</p>
-                            <p className="text-white/60 text-sm mt-1">
-                              请修改后重新提交，或联系管理员了解详情
+                            {tool.rejection_reason && (
+                              <p className="text-white/80 text-sm mt-1">
+                                原因：{tool.rejection_reason}
+                              </p>
+                            )}
+                            <Link
+                              to={`/tool/${tool.id}/edit`}
+                              className="inline-flex items-center mt-2 px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition-colors"
+                            >
+                              <Edit className="w-3.5 h-3.5 mr-1.5" />
+                              修改后重新提交
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {(tool.status === 'offline' || tool.status === 'forced_offline') && (
+                      <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+                        <div className="flex items-start space-x-2">
+                          <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-orange-400 font-medium text-sm">
+                              {tool.status === 'forced_offline' ? '被管理员强制下线' : '已主动下架'}
                             </p>
+                            {tool.offline_reason && (
+                              <p className="text-white/80 text-sm mt-1">
+                                原因：{tool.offline_reason}
+                              </p>
+                            )}
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Link
+                                to={`/tool/${tool.id}/edit`}
+                                className="inline-flex items-center px-3 py-1.5 bg-orange-500/20 text-orange-400 rounded-lg text-sm hover:bg-orange-500/30 transition-colors"
+                              >
+                                <Edit className="w-3.5 h-3.5 mr-1.5" />
+                                修改后重新提交
+                              </Link>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -371,13 +411,23 @@ function StatusBadge({ status }: { status: string }) {
       icon: <CheckCircle className="w-3 h-3" />,
     },
     rejected: {
-      text: '未通过',
+      text: '审核未通过',
+      className: 'bg-red-500/20 text-red-400 border-red-500/30',
+      icon: <XCircle className="w-3 h-3" />,
+    },
+    offline: {
+      text: '已下架',
+      className: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+      icon: <XCircle className="w-3 h-3" />,
+    },
+    forced_offline: {
+      text: '被强制下线',
       className: 'bg-red-500/20 text-red-400 border-red-500/30',
       icon: <XCircle className="w-3 h-3" />,
     },
   };
 
-  const config = configs[status] || configs.pending;
+  const config = configs[status] || { text: status, className: 'bg-white/10 text-white/60 border-white/20', icon: <Clock className="w-3 h-3" /> };
 
   return (
     <span className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs border ${config.className}`}>
